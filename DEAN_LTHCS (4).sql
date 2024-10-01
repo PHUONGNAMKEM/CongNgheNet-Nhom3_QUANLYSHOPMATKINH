@@ -1,0 +1,953 @@
+﻿--USE master
+--DROP DATABASE DEAN4
+--CREATE DATABASE DEAN4
+--USE DEAN4
+
+select * from [dbo].[UserSessions]
+USE master
+DROP DATABASE DEAN4
+
+--CREATE DATABASE DEAN
+--ON PRIMARY
+--(
+--	NAME = MATKINH_PRIMARY,
+--	FILENAME = 'E:\LuuDuLieuSinhVien\2001222777_THAIDANGPHUONGNAM\Hệ_quản_trị_cơ_sở_dl\mk_primary.mdf',
+--	SIZE = 50 MB,
+--	MAXSIZE = 100 MB,
+--	FILEGROWTH = 10 MB
+--),
+
+--(
+--	NAME = MATKINH_SECOND,
+--	FILENAME = 'E:\LuuDuLieuSinhVien\2001222777_THAIDANGPHUONGNAM\Hệ_quản_trị_cơ_sở_dl\mk_second.ndf',
+--	SIZE = 30 MB,
+--	MAXSIZE = 50 MB,
+--	FILEGROWTH = 15%
+--)
+
+--LOG ON 
+--(
+--	NAME = MATKINH_Log,
+--	FILENAME = 'E:\LuuDuLieuSinhVien\2001222777_THAIDANGPHUONGNAM\Hệ_quản_trị_cơ_sở_dl\mk_log.ldf',
+--	SIZE = 40 MB,
+--	MAXSIZE = 80 MB,
+--	FILEGROWTH = 20%
+--) 
+
+CREATE DATABASE DEAN4
+ON PRIMARY
+(
+	NAME = MATKINH_PRIMARY,
+	FILENAME = 'C:\Users\Lenovo\Downloads\HQTCSDL TUAN04\mk_primary.mdf',
+	SIZE = 50 MB,
+	MAXSIZE = 100 MB,
+	FILEGROWTH = 10 MB
+),
+
+(
+	NAME = MATKINH_SECOND,
+	FILENAME = 'C:\Users\Lenovo\Downloads\HQTCSDL TUAN04\mk_second.ndf',
+	SIZE = 30 MB,
+	MAXSIZE = 50 MB,
+	FILEGROWTH = 15%
+)
+
+LOG ON 
+(
+	NAME = MATKINH_Log,
+	FILENAME = 'C:\Users\Lenovo\Downloads\HQTCSDL TUAN04\mk_log.ldf',
+	SIZE = 40 MB,
+	MAXSIZE = 80 MB,
+	FILEGROWTH = 20%
+) 
+
+GO 
+
+USE DEAN4
+
+--XEM DỮ LIỆU
+USE DEAN4
+GO
+SP_SPACEUSED
+
+
+/*=======================================TAOBANG==================================*/
+CREATE TABLE KHACHHANG
+(
+	MAKH CHAR(15) NOT NULL,
+	TENKH NVARCHAR(25),
+	DIACHI NVARCHAR(25),
+	SODT CHAR(12),
+	CONSTRAINT PK_KHACHHANG PRIMARY KEY(MAKH)
+)
+SELECT * FROM KHACHHANG
+
+CREATE TABLE NHANVIEN
+(
+	MANV CHAR(15) NOT NULL,
+	TENNV NVARCHAR(50),
+	CHUCVU NVARCHAR(50),
+	MANV_QUANLY CHAR(15) NULL, -- Đây là khóa ngoại tham chiếu đến chính bảng NHANVIEN
+	CONSTRAINT PK_NHANVIEN PRIMARY KEY(MANV),
+	CONSTRAINT FK_NHANVIEN_QUANLY FOREIGN KEY(MANV_QUANLY) REFERENCES NHANVIEN(MANV)
+)
+SELECT * FROM NHANVIEN
+
+CREATE TABLE THONGTINNHANVIEN
+(
+	MANV CHAR(15) NOT NULL,
+	NGAYSINH DATE,
+	GIOITINH NVARCHAR(10),
+	CMND CHAR(12) UNIQUE, -- Số CMND/CCCD là duy nhất
+	EMAIL NVARCHAR(50) UNIQUE, -- Email là duy nhất
+	CONSTRAINT PK_THONGTINNHANVIEN PRIMARY KEY(MANV),
+	CONSTRAINT FK_THONGTINNHANVIEN_NHANVIEN FOREIGN KEY(MANV) REFERENCES NHANVIEN(MANV) 
+)
+SELECT * FROM THONGTINNHANVIEN
+
+CREATE TABLE HOADON
+(
+	MAHD CHAR(15) NOT NULL,
+	NGAYLAP DATE,
+	TRANGTHAI NVARCHAR(30),
+	MAKH CHAR(15),
+	MANV CHAR(15),
+	CONSTRAINT PK_HOADON PRIMARY KEY(MAHD),
+	CONSTRAINT FK_HOADON_KHACHHANG FOREIGN KEY(MAKH) REFERENCES KHACHHANG(MAKH),
+	CONSTRAINT FK_HOADON_NHANVIEN FOREIGN KEY(MANV) REFERENCES NHANVIEN(MANV)
+)
+SELECT * FROM HOADON
+
+CREATE TABLE LOAIHANG
+(
+	MALOAI CHAR(15) NOT NULL,
+	TENLOAI NVARCHAR(50) UNIQUE,--Tên loại hàng là duy nhất
+	CONSTRAINT PK_LOAIHANG PRIMARY KEY(MALOAI)
+)
+SELECT * FROM LOAIHANG
+
+CREATE TABLE HANGHOA
+(
+	MAHG CHAR(15) NOT NULL,
+	TENHANG NVARCHAR(25),
+	DVT NVARCHAR(30) DEFAULT 'Chưa xác định',--Mặc định là 'chưa xác định' nếu để trống
+	MALOAI CHAR(15),
+	CONSTRAINT PK_HANGHOA PRIMARY KEY(MAHG),
+	CONSTRAINT FK_HANGHOA_LOAIHANG FOREIGN KEY(MALOAI) REFERENCES LOAIHANG(MALOAI)
+)
+SELECT * FROM HANGHOA
+
+CREATE TABLE CHITIETHOADON
+(
+	MAHD CHAR(15) NOT NULL,
+	MAHG CHAR(15) NOT NULL,
+	SOLUONG INT DEFAULT 0,--Giá trị mặc định là 0 nếu để trống
+	GIABAN FLOAT DEFAULT 0,--Giá trị mặc định là 0 nếu để trống
+	CONSTRAINT PK_CHITIETHOADON PRIMARY KEY(MAHD, MAHG),
+	CONSTRAINT FK_CHITIETHOADON_HOADON FOREIGN KEY(MAHD) REFERENCES HOADON(MAHD),
+	CONSTRAINT FK_CHITIETHOADON_HANGHOA FOREIGN KEY(MAHG) REFERENCES HANGHOA(MAHG),
+	CONSTRAINT CHK_CHITIETHOADON_SOLUONG CHECK(SOLUONG>=0),--Số lượng không được là số âm
+	CONSTRAINT CHK_CHITIETHOADON_GIABAN CHECK(GIABAN>=0)--Giá bán không được là số âm
+)
+SELECT * FROM CHITIETHOADON
+
+CREATE TABLE NHACC
+(
+	MANCC CHAR(15) NOT NULL,
+	TENNCC NVARCHAR(15) NOT NULL UNIQUE,--Tên nhà cung cấp là duy nhất
+	DIACHI NVARCHAR(25), 
+	SODT CHAR(12),
+	CONSTRAINT PK_NHACC PRIMARY KEY(MANCC),
+)
+SELECT * FROM NHACC
+
+CREATE TABLE PHIEUNHAP
+(
+	MAPN CHAR(15) NOT NULL,
+	NGAYNHAP DATE,
+	MANCC CHAR(15),
+	MANV CHAR(15),
+	CONSTRAINT PK_PHIEUNHAP PRIMARY KEY(MAPN),
+	CONSTRAINT FK_PHIEUNHAP_NHACC FOREIGN KEY(MANCC) REFERENCES NHACC(MANCC),
+	CONSTRAINT FK_PHIEUNHAP_NHANVIEN FOREIGN KEY(MANV) REFERENCES NHANVIEN(MANV)
+)
+SELECT * FROM PHIEUNHAP
+
+CREATE TABLE CHITIETPN
+(
+	MAPN CHAR(15) NOT NULL,
+	MAHG CHAR(15) NOT NULL,
+	SOLUONG INT DEFAULT 0,--Giá trị mặc định là 0 nếu để trống
+	GIABAN FLOAT DEFAULT 0,--Giá trị mặc định là 0 nếu để trống
+	CONSTRAINT PK_CHITIETPN PRIMARY KEY(MAPN, MAHG),
+	CONSTRAINT FK_CHITIETPN_PHIEUNHAP FOREIGN KEY(MAPN) REFERENCES PHIEUNHAP(MAPN),
+	CONSTRAINT FK_CHITIETPN_HANGHOA FOREIGN KEY(MAHG) REFERENCES HANGHOA(MAHG),
+	CONSTRAINT CHK_CHITIETPN_SOLUONG CHECK(SOLUONG>=0),--Số lượng không được là số âm
+	CONSTRAINT CHK_CHITIETPN_GIABAN CHECK(GIABAN>=0)--Giá bán không được là số âm
+)
+SELECT * FROM CHITIETPN
+
+/*=======================================NHẬP DỮ LIỆU VÀO DATABASE==================================*/
+-- BẢNG KHACHHANG
+INSERT INTO KHACHHANG (MAKH, TENKH, DIACHI, SODT)
+VALUES 
+    ('KH001', N'Nguyễn Văn A', N'Hà Nội', '0987654321'),
+    ('KH002', N'Trần Thị B', N'Hồ Chí Minh', '0912345678'),
+    ('KH003', N'Lê Văn C', N'Đà Nẵng', '0987654321');
+
+SELECT * FROM KHACHHANG
+-- BẢNG NHANVIEN
+INSERT INTO NHANVIEN (MANV, TENNV, CHUCVU) 
+VALUES ('NV001', N'Nguyễn Văn A', N'Giám đốc');  -- Không có quản lý
+
+INSERT INTO NHANVIEN (MANV, TENNV, CHUCVU, MANV_QUANLY)
+VALUES 
+    ('NV002', N'Trần Thị B', N'Trưởng phòng', 'NV001'),
+    ('NV003', N'Lê Văn C', N'Nhân viên', 'NV002');
+
+SELECT * FROM NHANVIEN;
+-- BẢNG THONGTINNHANVIEN
+INSERT INTO THONGTINNHANVIEN (MANV, NGAYSINH, GIOITINH, CMND, EMAIL)
+VALUES
+    ('NV001', '1980-01-01', N'Nam', '012345678901', 'nguyenvana@example.com'),
+    ('NV002', '1985-02-02', N'Nữ', '023456789012', 'tranthib@example.com'),
+    ('NV003', '1990-03-03', N'Nam', '034567890123', 'levanc@example.com');
+
+SELECT * FROM THONGTINNHANVIEN;
+-- BẢNG HOADON
+SET DATEFORMAT DMY;
+INSERT INTO HOADON (MAHD, NGAYLAP, TRANGTHAI, MAKH, MANV)
+VALUES 
+    ('HD001', '20/11/2023', N'Đang xử lý', 'KH001', 'NV002'),
+    ('HD002', '05/12/2023', N'Đã giao', 'KH002', 'NV003'),
+    ('HD003', '10/12/2023', N'Đã hủy', 'KH001', 'NV003');
+
+SELECT * FROM HOADON
+
+-- BẢNG LOAIHANG
+INSERT INTO LOAIHANG (MALOAI, TENLOAI)
+VALUES 
+    ('LT001', N'Kính cận'),
+    ('LT002', N'Kính râm'),
+    ('LT003', N'Lens'),
+    ('LT004', N'Phụ kiện');
+
+SELECT * FROM LOAIHANG
+
+-- BẢNG HANGHOA
+INSERT INTO HANGHOA (MAHG, TENHANG, DVT, MALOAI)
+VALUES 
+    ('HG001', N'Kính cận gọng tròn', N'Cái', 'LT001'),
+    ('HG002', N'Kính râm thời trang', N'Cái', 'LT002'),
+    ('HG003', N'Lens cận 1 tháng', N'Hộp', 'LT003'),
+    ('HG004', N'Vỏ kính', N'Cái', 'LT004'),
+	('HG005', N'Kính áp tròng', N'Hộp', 'LT003'),
+    ('HG006', N'Dung dịch ngâm kính', N'Chai', 'LT004'),
+    ('HG007', N'Kính râm thể thao', N'Cái', 'LT002');
+
+SELECT * FROM HANGHOA
+
+-- BẢNG CHITIETHOADON
+INSERT INTO CHITIETHOADON (MAHD, MAHG, SOLUONG, GIABAN)
+VALUES 
+    ('HD001', 'HG001', 2, 800000),
+    ('HD001', 'HG003', 1, 280000),
+    ('HD002', 'HG002', 1, 600000);
+
+SELECT * FROM CHITIETHOADON
+
+-- BẢNG NHACC
+INSERT INTO NHACC (MANCC, TENNCC, DIACHI, SODT)
+VALUES 
+    ('NCC001', N'Công ty A', N'Hà Nội', '0987654321'),
+    ('NCC002', N'Công ty B', N'Hồ Chí Minh', '0912345678');
+
+SELECT * FROM NHACC
+
+-- BẢNG PHIEUNHAP
+SET DATEFORMAT DMY;
+INSERT INTO PHIEUNHAP (MAPN, NGAYNHAP, MANCC, MANV)
+VALUES 
+    ('PN001', '15/11/2023', 'NCC001', 'NV001'),
+    ('PN002', '01/12/2023', 'NCC002', 'NV002');
+
+SELECT * FROM PHIEUNHAP
+
+-- BẢNG CHITIETPN
+INSERT INTO CHITIETPN (MAPN, MAHG, SOLUONG, GIABAN)
+VALUES 
+    ('PN001', 'HG001', 100, 400000),
+    ('PN002', 'HG002', 50, 600000),
+	('PN002', 'HG003', 120, 280000),
+	('PN001', 'HG004', 10, 30000),
+    ('PN002', 'HG005', 25, 180000),
+	('PN001', 'HG006', 30, 200000),
+    ('PN001', 'HG007', 20, 50000);
+
+SELECT * FROM CHITIETPN
+
+-- ALL SELECT TABLE
+SELECT * FROM THONGTINNHANVIEN
+SELECT * FROM NHANVIEN
+SELECT * FROM KHACHHANG
+SELECT * FROM HOADON
+SELECT * FROM LOAIHANG
+SELECT * FROM HANGHOA
+SELECT * FROM CHITIETHOADON
+SELECT * FROM NHACC
+SELECT * FROM PHIEUNHAP
+SELECT * FROM CHITIETPN
+
+CREATE TABLE UserSessions
+(
+	UserID NVARCHAR(30)
+)
+
+/*=======================================TRUY VẤN DỮ LIỆU==================================*/
+
+--1. Kiểm tra và sử lý hàng tồn kho
+--1.1. Kiểm tra số lượng tồn kho của mỗi hàng hóa
+CREATE VIEW TONG_NHAP
+AS
+	SELECT MAHG, SUM(SOLUONG) AS TONG_NHAP
+	FROM CHITIETPN
+	GROUP BY MAHG
+SELECT * FROM TONG_NHAP
+
+CREATE VIEW TONG_BAN
+AS
+	SELECT MAHG, SUM(SOLUONG) AS TONG_BAN
+	FROM CHITIETHOADON
+	GROUP BY MAHG
+SELECT * FROM TONG_BAN
+
+SELECT TONG_BAN.MAHG,HANGHOA.TENHANG,(TONG_NHAP-TONG_BAN) AS SOLUONGTONKHO
+FROM TONG_BAN, TONG_NHAP, HANGHOA
+WHERE HANGHOA.MAHG=TONG_BAN.MAHG
+AND HANGHOA.MAHG=TONG_NHAP.MAHG
+GROUP BY TONG_BAN.MAHG,HANGHOA.TENHANG,(TONG_NHAP-TONG_BAN)
+
+--1.2. Tìm các hàng hóa đã nhập nhưng chưa bán - lồng tương quan
+SELECT HANGHOA.MAHG, HANGHOA.TENHANG, TONG_NHAP.TONG_NHAP
+FROM HANGHOA 
+JOIN TONG_NHAP ON HANGHOA.MAHG = TONG_NHAP.MAHG
+WHERE NOT EXISTS (
+    SELECT * 
+    FROM CHITIETHOADON 
+    WHERE CHITIETHOADON.MAHG = HANGHOA.MAHG
+)
+
+GO
+
+-- DẠNG THỦ TỤC
+CREATE PROC HANG_CHUA_BAN
+AS
+	BEGIN
+		SELECT HANGHOA.MAHG, HANGHOA.TENHANG,DVT, MALOAI ,TONG_NHAP.TONG_NHAP 
+		FROM HANGHOA 
+		JOIN TONG_NHAP ON HANGHOA.MAHG = TONG_NHAP.MAHG
+		WHERE NOT EXISTS (
+			SELECT * 
+			FROM CHITIETHOADON 
+			WHERE CHITIETHOADON.MAHG = HANGHOA.MAHG
+)
+	END
+GO
+
+EXEC HANG_CHUA_BAN
+
+GO
+
+--1.3. Hàng hóa có doanh thu cao nhất - lồng phân cấp
+SELECT CHITIETHOADON.MAHG, HANGHOA.TENHANG, SUM(CHITIETHOADON.SOLUONG * CHITIETHOADON.GIABAN) AS DOANH_THU
+FROM CHITIETHOADON JOIN HANGHOA ON CHITIETHOADON.MAHG = HANGHOA.MAHG
+GROUP BY CHITIETHOADON.MAHG, HANGHOA.TENHANG
+HAVING SUM(CHITIETHOADON.SOLUONG * CHITIETHOADON.GIABAN) >= ALL (
+        SELECT SUM(CHITIETHOADON.SOLUONG * CHITIETHOADON.GIABAN)
+        FROM CHITIETHOADON
+        GROUP BY CHITIETHOADON.MAHG
+    )
+
+GO
+-- DẠNG THỦ TỤC 
+CREATE PROC HANG_BAN_CHAY_NHAT
+AS
+	BEGIN
+		SELECT CHITIETHOADON.MAHG, HANGHOA.TENHANG ,HANGHOA.DVT, HANGHOA.MALOAI,  SUM(CHITIETHOADON.SOLUONG * CHITIETHOADON.GIABAN) AS DOANH_THU
+		FROM CHITIETHOADON JOIN HANGHOA ON CHITIETHOADON.MAHG = HANGHOA.MAHG
+		GROUP BY CHITIETHOADON.MAHG, HANGHOA.TENHANG ,HANGHOA.DVT, HANGHOA.MALOAI
+		HAVING SUM(CHITIETHOADON.SOLUONG * CHITIETHOADON.GIABAN) >= ALL (
+				SELECT SUM(CHITIETHOADON.SOLUONG * CHITIETHOADON.GIABAN)
+				FROM CHITIETHOADON
+				GROUP BY CHITIETHOADON.MAHG
+    )
+	END
+GO
+EXEC HANG_BAN_CHAY_NHAT
+
+GO
+
+CREATE PROC HANG_CHUA_BAN_VA_TONG
+    @TongSoLuongChuaBan INT OUTPUT
+AS
+BEGIN
+    SELECT HANGHOA.MAHG, HANGHOA.TENHANG, DVT, MALOAI, TONG_NHAP.TONG_NHAP
+    FROM HANGHOA
+    JOIN TONG_NHAP ON HANGHOA.MAHG = TONG_NHAP.MAHG
+    WHERE NOT EXISTS (
+        SELECT * 
+        FROM CHITIETHOADON
+        WHERE CHITIETHOADON.MAHG = HANGHOA.MAHG
+    );
+    
+    -- Tính tổng số lượng hàng chưa bán
+    SELECT @TongSoLuongChuaBan = SUM(TONG_NHAP.TONG_NHAP)
+    FROM HANGHOA
+    JOIN TONG_NHAP ON HANGHOA.MAHG = TONG_NHAP.MAHG
+    WHERE NOT EXISTS (
+        SELECT * 
+        FROM CHITIETHOADON
+        WHERE CHITIETHOADON.MAHG = HANGHOA.MAHG
+    );
+END
+GO
+
+
+
+GO
+--1.4. Khi ta thêm một CHITIETHD mà hàng hóa có số lượng tồn kho thấp hơn mức tối thiểu của hàng hóa đó thì thông báo
+CREATE TRIGGER KT_SOLUONGTONKHO_HH
+ON CHITIETHOADON
+FOR INSERT
+AS
+BEGIN
+	--Khai báo biến
+    DECLARE @MAHG CHAR(15);
+    DECLARE @SOLUONG INT;
+    DECLARE @SOLUONGTONKHO INT;
+	
+    -- Lấy mã hàng và số lượng từ bản ghi mới được thêm
+    SELECT @MAHG = MAHG, @SOLUONG = SOLUONG  FROM INSERTED;
+
+    -- Tính số lượng tồn kho hiện tại
+    SELECT @SOLUONGTONKHO = ((SUM(CHITIETPN.SOLUONG)/COUNT(HANGHOA.MAHG)) - (SUM(CHITIETHOADON.SOLUONG)))
+	FROM CHITIETHOADON, CHITIETPN, HANGHOA
+	WHERE CHITIETHOADON.MAHG=HANGHOA.MAHG
+	AND HANGHOA.MAHG=CHITIETPN.MAHG
+	AND HANGHOA.MAHG=@MAHG
+    GROUP BY HANGHOA.MAHG;
+
+	-- Kiểm tra sô lượng tồn kho
+    IF ((@SOLUONGTONKHO) < 10 and (@SOLUONGTONKHO) >0)-- Kiểm tra và thông báo nếu số lượng tồn kho của hàng hóa thấp hơn mức tối thiểu (ví dụ: 10)
+		BEGIN
+			PRINT(N'Số lượng tồn kho của hàng hóa có mã ' +  RTRIM(@MAHG) + N' là '+CONVERT(NVARCHAR, ABS(@SOLUONGTONKHO))+N' hiện tại đang thấp hơn mức tối thiểu. ');
+		END
+	ELSE IF((@SOLUONGTONKHO) = 0)-- Kiểm tra và thông báo nếu số lượng tồn kho của hàng hóa = 0 đồng nghĩa với việc hết hàng
+		BEGIN
+			PRINT(N'Số lượng tồn kho của hàng hóa có mã ' +  RTRIM(@MAHG) + N' hiện tại đã hết hàng vui lòng bổ sung thêm. ');
+		END
+	ELSE
+		BEGIN
+			-- Thông báo lỗi và hủy bỏ việc thêm hóa đơn
+			PRINT(N'Số lượng tồn kho của hàng hóa có mã ' +  RTRIM(@MAHG) + N' còn lại '+ CONVERT(NVARCHAR, ABS(@SOLUONGTONKHO + @SOLUONG))+ N' Số lượng không đủ để thêm hóa đơn này. ');
+			ROLLBACK TRANSACTION;
+		END
+END;
+
+-- Test thử việc thêm hóa đơn mà sản phẩm có số lượng tồn kho thấp hơn mức tối thiểu
+INSERT INTO CHITIETHOADON VALUES('HD002', 'HG001', 97, 800000);
+
+DELETE FROM CHITIETHOADON
+WHERE MAHD='HD002' AND MAHG='HG001'
+-- Test thử việc thêm hóa đơn mà sản phẩm có số lượng tồn kho = 0
+INSERT INTO CHITIETHOADON VALUES('HD002', 'HG001', 98, 800000);
+
+
+DELETE FROM CHITIETHOADON
+WHERE MAHD='HD002' AND MAHG='HG001'
+-- Test thử việc thêm hóa đơn mà sản phẩm có số lượng tồn kho không đủ để đáp ứng
+INSERT INTO CHITIETHOADON VALUES('HD002', 'HG001', 99, 800000);
+
+-- Kiểm tra CHITIETHOADON
+SELECT * FROM CHITIETHOADON
+
+
+
+---- 2. NGHIỆP VỤ ĐẶT HÀNG TẠO HÓA ĐƠN
+----------------------------------------------------------------------------------------------
+---- *LẤY THÔNG TIN CỦA NHỮNG SẢN PHẨM ĐÃ ĐẶT TỪ BẢNG HANGHOA*
+---- CÂU TRUY VẤN:
+
+--DECLARE @MaHangDaDat TABLE (MAHG CHAR(15));
+--INSERT INTO @MaHangDaDat VALUES ('HG001'), ('HG002');
+
+--SELECT * FROM HANGHOA WHERE MAHG IN (SELECT MAHG FROM @MaHangDaDat);
+----------------------------------------------------------------------------------------------
+
+---- *NẾU KHÁCH HÀNG CHƯA CÓ THÔNG TIN TRÊN HỆ THỐNG THÌ THÊM THÔNG TIN VÀO BẢNG KHACHHANG*
+---- CÂU TRUY VẤN:
+
+--DECLARE @MaKhachHang NVARCHAR(15) = 'KH004'; -- Ví dụ mã khách hàng mới
+
+--IF EXISTS (SELECT 1 FROM KHACHHANG WHERE MAKH = @MaKhachHang)
+--BEGIN
+--    -- Nếu khách hàng đã tồn tại, thông báo lỗi
+--    RAISERROR('Khách hàng có mã %s đã tồn tại trong hệ thống.', 16, 1, @MaKhachHang);
+--END
+--ELSE
+--BEGIN
+--    -- Nếu khách hàng chưa tồn tại, tiến hành thêm mới
+--    INSERT INTO KHACHHANG (MAKH, TENKH, DIACHI, SODT)
+--    --VALUES (@MaKhachHang, N'Phương Nam Phong Thanh', N'Highlands D10', N'0923603925');
+--	VALUES (@MaKhachHang, N'Thanh Phương Nam Phong', N'Highlands Tân Phú', N'0922623975');
+--END
+
+--SELECT * FROM KHACHHANG
+-----------------------------------------------------------------------------------------------
+---- *TẠO BẢN GHI MỚI VÀO BẢNG HOADON*
+
+--DECLARE @MaHoaDonMoi CHAR(15) = 'HD004'; -- Ví dụ mã hóa đơn mới
+--DECLARE @NgayLap DATE = GETDATE();
+--DECLARE @MaKhachHangMoi NVARCHAR(15) = 'KH004'; -- Thay bằng mã khách hàng thực tế
+--DECLARE @MaNhanVienMoi CHAR(15) = 'NV002';
+
+--INSERT INTO HOADON (MAHD, NGAYLAP, TRANGTHAI, MAKH, MANV)
+--VALUES (@MaHoaDonMoi, @NgayLap, N'Đang xử lý', @MaKhachHangMoi, @MaNhanVienMoi);
+
+--SELECT * FROM HOADON
+-----------------------------------------------------------------------------------------------
+---- *THÊM BẢN GHI VÀO BẢNG CHITIETHOADON*
+
+---- Giả sử dữ liệu chi tiết hóa đơn được lưu trữ trong một bảng tạm thời
+----DECLARE @MaHoaDonMoi CHAR(15) = 'HD004';
+--DECLARE @ChiTietHoaDon TABLE (MAHD CHAR(15), MAHG CHAR(15), SOLUONG INT, GIABAN FLOAT);
+--INSERT INTO @ChiTietHoaDon (MAHD, MAHG, SOLUONG, GIABAN) VALUES 
+--    (@MaHoaDonMoi, 'HG003', 2, 700000),
+--    (@MaHoaDonMoi, 'HG002', 3, 400000);
+
+--INSERT INTO CHITIETHOADON (MAHD, MAHG, SOLUONG, GIABAN)
+--SELECT * FROM @ChiTietHoaDon;
+
+-----------------------------------------------------------------------------------------------
+---- *TÍNH TỔNG TIỀN*
+--DECLARE @MaHoaDon NVARCHAR(15) = 'HD001'; -- Thay bằng mã hóa đơn cần tính
+
+--SELECT SUM(SOLUONG * GIABAN) AS TONGTIEN
+--FROM CHITIETHOADON
+--WHERE MAHD = @MaHoaDon;
+
+-----------------------------------------------------------------------------------------------
+--SELECT HOADON.MAHD, TENKH, SUM(SOLUONG * GIABAN) AS TONGTIEN
+--FROM KHACHHANG
+--INNER JOIN HOADON ON KHACHHANG.MAKH = HOADON.MAKH
+--INNER JOIN CHITIETHOADON ON HOADON.MAHD = CHITIETHOADON.MAHD
+--GROUP BY HOADON.MAHD, TENKH
+
+
+-- CÁCH KHÔNG ĐẶT BIẾN - TRUY VẤN DEMO
+-- 1. Lấy thông tin những mã hàng mà khách đã đặt show ra chi tiết
+SELECT * FROM HANGHOA
+WHERE MAHG = 'HG005' --
+
+-- 2. Kiểm tra nếu khách hàng chưa có trong bảng KHACHHANG thì thêm mới vào
+IF EXISTS (SELECT 1 FROM KHACHHANG WHERE MAKH = 'KH004')
+BEGIN 
+	RAISERROR('Khách hàng có mã %s đã tồn tại trong hệ thống.', 16, 1, 'KH004');
+END
+ELSE 
+BEGIN
+	INSERT INTO KHACHHANG (MAKH, TENKH, DIACHI, SODT)
+    VALUES ('KH004', N'Nguyễn Thị D', N'Highlands D10', N'0923603925');
+END	
+
+SELECT * FROM KHACHHANG
+
+-- 3. Thêm một hóa đơn mới vào bảng HOADON
+INSERT INTO HOADON (MAHD, NGAYLAP, TRANGTHAI, MAKH, MANV)
+VALUES ('HD004', '2024-8-31', N'Đang xử lý', 'KH004', 'NV001');
+
+SELECT * FROM HOADON
+
+-- 4. Thêm vào bảng CHITIETHD
+INSERT INTO CHITIETHOADON (MAHD, MAHG, SOLUONG, GIABAN)
+VALUES ('HD004', 'HG005', 1, 180000)
+
+-- 5. Tính tổng tiền
+SELECT HOADON.MAHD, TENKH, SUM(SOLUONG * GIABAN) AS TONGTIEN
+FROM KHACHHANG
+INNER JOIN HOADON ON KHACHHANG.MAKH = HOADON.MAKH
+INNER JOIN CHITIETHOADON ON HOADON.MAHD = CHITIETHOADON.MAHD
+GROUP BY HOADON.MAHD, TENKH
+
+
+-- CÁCH ĐẶT BIẾN
+DECLARE @MaHangDaDat TABLE (MAHG CHAR(15)); -- Bảng chứa mã hàng đã đặt
+DECLARE @MaHoaDonMoi CHAR(15) = 'HD004'; -- Ví dụ mã hóa đơn này là một hóa đơn mới
+DECLARE @NgayLap DATE = GETDATE(); -- Lấy ngày hiện tại
+DECLARE @MaKhachHangMoi NVARCHAR(15) = 'KH004'; -- Lấy mã khách hàng của KH mới, sau này thay bằng mã khách hàng thực tế
+DECLARE @MaNhanVienMoi CHAR(15) = 'NV001'; -- Mã nhân viên mà lập ra hóa đơn này
+DECLARE @ChiTietHoaDon TABLE (MAHD CHAR(15), MAHG CHAR(15), SOLUONG INT, GIABAN FLOAT); 
+-- Bảng chứa thông tin chi tiết của hóa đơn
+
+
+-- 1. Lấy thông tin những mã hàng mà khách đã đặt show ra chi tiết
+INSERT INTO @MaHangDaDat VALUES ('HG005'), ('HG007'); -- Giả sử mã hàng đã đặt gồm có HG001 và HG002
+SELECT * FROM HANGHOA WHERE MAHG IN (SELECT MAHG FROM @MaHangDaDat);
+
+
+-- 2. Kiểm tra nếu khách hàng chưa có trong bảng KHACHHANG thì thêm mới vào
+IF EXISTS (SELECT 1 FROM KHACHHANG WHERE MAKH = @MaKhachHangMoi)
+BEGIN
+    -- Nếu khách hàng đã tồn tại, thông báo lỗi
+    RAISERROR('Khách hàng có mã %s đã tồn tại trong hệ thống.', 16, 1, @MaKhachHangMoi);
+END
+
+ELSE
+BEGIN
+    -- Nếu khách hàng chưa tồn tại, tiến hành thêm mới
+    INSERT INTO KHACHHANG (MAKH, TENKH, DIACHI, SODT)
+    --VALUES (@MaKhachHang, N'Phương Nam Phong Thanh', N'Highlands D10', N'0923603925');
+	VALUES (@MaKhachHangMoi, N'Thanh Phương Nam Phong', N'Highlands Tân Phú', N'0922623975');
+END
+
+
+-- 3. Thêm một hóa đơn mới vào bảng HOADON
+INSERT INTO HOADON (MAHD, NGAYLAP, TRANGTHAI, MAKH, MANV)
+VALUES (@MaHoaDonMoi, @NgayLap, N'Đang xử lý', @MaKhachHangMoi, @MaNhanVienMoi);
+
+SELECT * FROM HOADON
+
+
+-- 4. Thêm vào bảng CHITIETHD
+INSERT INTO @ChiTietHoaDon (MAHD, MAHG, SOLUONG, GIABAN) VALUES 
+    (@MaHoaDonMoi, 'HG005', 2, 700000),
+    (@MaHoaDonMoi, 'HG007', 3, 400000);
+
+INSERT INTO CHITIETHOADON (MAHD, MAHG, SOLUONG, GIABAN)
+SELECT MAHD, MAHG, SOLUONG, GIABAN
+FROM @ChiTietHoaDon;
+
+SELECT * FROM CHITIETHOADON;
+
+
+-- 5. Tính tổng tiền
+DECLARE @MaHoaDon NVARCHAR(15) = 'HD001'; -- Thay bằng mã hóa đơn cần tính
+
+SELECT SUM(SOLUONG * GIABAN) AS TONGTIEN
+FROM CHITIETHOADON
+WHERE MAHD = @MaHoaDon;
+
+-----------------------------------------------------------------------------------------------
+
+GO
+
+-- 1. TẠO THỦ TỤC CHO BẢNG KHACHHANG 
+-- 1.1. Hiển thị thông tin khách hàng
+CREATE PROC DISPLAY_KHACHHANG 
+AS
+	SELECT * FROM KHACHHANG
+
+--EXEC DISPLAY_KHACHHANG 
+
+GO
+-- 1.2. Thêm một khách hàng
+--@"INSERT INTO KHACHHANG(MAKH, TENKH, DIACHI, SODT) 
+--VALUES('" + txtmakh.Text + "',N'" + txttenkh.Text 
+-- + "',N'" + txtdiachi.Text + "','" + txtsodt.Text + "')";
+
+CREATE PROC INSERT_KHACHHANG @MAKH CHAR(10), @TENKH NVARCHAR(50), @DIACHI NVARCHAR(50), @SODT CHAR (10)
+AS
+	INSERT INTO KHACHHANG VALUES(@MAKH, @TENKH, @DIACHI, @SODT)
+
+-- EXEC INSERT_KHACHHANG 'KH007', N'Bùi Thị D', N'Dak Nong', '0989712346'
+-- EXEC INSERT_KHACHHANG "'" + txtmakh.Text + "', N'" + txttenkh.Text + "', N'" + txtdiachi.Text + "', '" + txtsodt.Text + "'"
+
+GO
+-- 1.3. Xóa một khách hàng
+CREATE PROC DELETE_KHACHHANG @MAKH CHAR(10)
+AS
+	DELETE FROM KHACHHANG WHERE MAKH = @MAKH
+
+--"DELETE FROM KHACHHANG WHERE MAKH = '"+txtmakh.Text+"'"
+EXEC DELETE_KHACHHANG 'KH001'
+-- "EXEC DELETE_KHACHHANG '" + txtmakh.Text + "'"
+GO
+-- 1.4. Sửa một khách hàng
+CREATE PROC UPDATE_KHACHHANG @MAKH_OLD CHAR(10), @MAKH_NEW CHAR(10), @TENKH NVARCHAR(50), @DIACHI NVARCHAR(50), @SODT CHAR(10)
+AS 
+	UPDATE KHACHHANG
+	SET MAKH = @MAKH_NEW, TENKH = @TENKH, DIACHI = @DIACHI, SODT = @SODT
+	WHERE MAKH = @MAKH_OLD
+
+--"UPDATE KHACHHANG SET MAKH = '"+txtmakh.Text+"',TENKH = N'"+txttenkh.Text+"',
+--DIACHI = N'"+txtdiachi.Text+"',SODT = '"+txtsodt.Text+"' WHERE MAKH='"
+--+item.SubItems[0].Text+"'"
+
+EXEC UPDATE_KHACHHANG 'KH001', 'KH007', N'Trần Thị Thanh Phong', N'Cà Mau', '0976542917'
+-- "EXEC UPDATE_KHACHHANG '" + txtmakh.Text + "', '" + item.SubItems[0].Text + "', N'" + txttenkh.Text + "', N'" + txtdiachi.Text + "', '" + txtsodt.Text + "'"
+
+GO
+-- 2. TẠO THỦ TỤC CHO VIEW HOADON
+-- 2.1. Hiển thị thông tin hóa đơn
+CREATE VIEW	HOADON_VIEW
+AS 
+	SELECT * FROM HOADON
+
+GO
+
+CREATE PROC DISPLAY_HOADON_VIEW
+AS
+	SELECT * FROM HOADON_VIEW
+
+EXEC DISPLAY_HOADON_VIEW
+
+GO
+-- 2.2. Thêm một hóa đơn
+CREATE PROC INSERT_HOADON_VIEW @MAHD CHAR(10), @NGAYLAP DATE, @TRANGTHAI NVARCHAR(30), @MAKH CHAR(10), @MANV CHAR(10) 
+AS
+	INSERT INTO HOADON_VIEW VALUES (@MAHD, @NGAYLAP, @TRANGTHAI, @MAKH, @MANV)
+
+GO
+
+-- EXEC INSERT_HOADON_VIEW 'HD001', '2024/09/10', N'Còn hàng', 'KH001', 'NV002'
+-- 2.3. Xóa một hóa đơn
+CREATE PROC DELETE_HOADON_VIEW @MAHD CHAR(10)
+AS	
+	DELETE 
+	FROM HOADON_VIEW 
+	WHERE MAHD = @MAHD
+
+GO
+
+-- EXEC DELETE_HOADON_VIEW 'HD003'
+-- 2.4. Sửa một hóa đơn
+CREATE PROC UPDATE_HOADON_VIEW @MAHD_OLD CHAR(10), @MAHD_NEW CHAR(10), @NGAYLAP DATE, @TRANGTHAI NVARCHAR(30), @MAKH CHAR(10), @MANV CHAR(10) 
+AS
+	UPDATE HOADON_VIEW
+	SET MAHD = @MAHD_NEW, NGAYLAP = @NGAYLAP, TRANGTHAI = @TRANGTHAI, MAKH = @MAKH, MANV = @MANV 
+	WHERE MAHD = @MAHD_OLD
+
+-- EXEC UPDATE_HOADON_VIEW 'HD001', 'HD007', '2024/09/10', N'Còn hàng', 'KH001', 'NV001'
+
+GO
+-- 3. TẠO THỦ TỤC CHO BẢNG 
+CREATE VIEW NHANVIEN_COPY
+AS
+	SELECT * FROM NHANVIEN
+
+GO
+-- 3.1. Hiển thị thông tin bảng nhanvien
+CREATE PROC DISPLAY_NHANVIEN_VIEW 
+AS 
+	SELECT * FROM NHANVIEN_COPY
+
+EXEC DISPLAY_NHANVIEN
+
+GO
+-- 3.2. Thêm một nhân viên
+CREATE PROC INSERT_NHANVIEN_VIEW @MANV CHAR(10), @TENNV NVARCHAR(50), @CHUCVU NVARCHAR(30), @MANV_QUANLY CHAR(10)
+AS
+	INSERT INTO NHANVIEN_COPY VALUES (@MANV, @TENNV, @CHUCVU, @MANV_QUANLY)
+
+--EXEC INSERT_NHANVIEN_VIEW
+GO
+
+-- 3.3. Xóa một nhân viên
+CREATE PROC DELETE_NHANVIEN_VIEW @MANV CHAR(10)
+AS
+	DELETE
+	FROM NHANVIEN_COPY
+	WHERE MANV = @MANV
+
+GO
+-- 3.4. Sửa một nhân viên
+
+CREATE PROC UPDATE_NHANVIEN_VIEW @MANV_OLD CHAR(10), @MANV_NEW CHAR(10), @TENNV NVARCHAR(50), @CHUCVU NVARCHAR(30), @MANV_QUANLY CHAR(10)
+AS
+	--IF NOT EXISTS(SELECT 1 FROM NHANVIEN_COPY WHERE MANV = @MANV_OLD)
+	UPDATE NHANVIEN_COPY 
+	SET MANV = @MANV_NEW, TENNV = @TENNV, CHUCVU = @CHUCVU, MANV_QUANLY = @MANV_QUANLY 
+	WHERE MANV = @MANV_OLD
+
+EXEC UPDATE_NHANVIEN_VIEW 'NV0013', 'NV002', N'NGUYENVAN2', N'GIAMDOC2', 'NV003'
+SELECT * FROM NHANVIEN_COPY
+
+GO
+
+-- 4. TẠO THỦ TỤC CHO BẢNG HANGHOA
+-- 4.1. Hiển thị thông tin hàng hóa
+CREATE PROC DISPLAY_HANGHOA
+AS
+	SELECT * FROM HANGHOA
+
+EXEC DISPLAY_HANGHOA 
+
+GO
+-- 4.2. Thêm một hàng hóa
+CREATE PROC INSERT_HANGHOA @MAHG CHAR(10), @TENHANG NVARCHAR(50), @DVT NVARCHAR(30), @MALOAI CHAR(10)
+AS
+	INSERT INTO HANGHOA VALUES (@MAHG, @TENHANG, @DVT, @MALOAI)
+	
+GO
+
+-- 4.3. Xóa một hàng hóa
+CREATE PROC DELETE_HANGHOA @MAHG CHAR(10)
+AS
+	DELETE
+	FROM HANGHOA
+	WHERE MAHG = @MAHG
+
+GO
+-- 4.4. Sửa một hàng hóa
+CREATE PROC UPDATE_HANGHOA @MAHG_OLD CHAR(10), @MAHG_NEW CHAR(10), @TENHANG NVARCHAR(50), @DVT NVARCHAR(30), @MALOAI CHAR(10)
+AS
+	UPDATE HANGHOA
+	SET MAHG = @MAHG_NEW, TENHANG = @TENHANG, DVT = @DVT, MALOAI = @MALOAI 
+	WHERE MAHG = @MAHG_OLD
+
+EXEC UPDATE_HANGHOA 'HG009', 'HG009', N'AI BIT 2', N'Thùng', 'LT002'
+SELECT * FROM HANGHOA
+
+
+--/*=====================================================================BẢNG HÓA ĐƠN========================================================================*/
+--CREATE PROC HIENTHI_HOADON
+--AS
+--	BEGIN
+--		SELECT * FROM HOADON
+--	END
+--GO
+-- sql = @"EXEC HIENTHI_HOADON";
+
+
+
+--CREATE PROC THEM_HOADON @MAHD CHAR(15), @NGAYLAP DATE, @TRANGTHAI NVARCHAR(30), @MAKH CHAR(15), @MANV CHAR(15)
+--AS
+--	BEGIN
+--		INSERT INTO HOADON(MAHD, NGAYLAP, TRANGTHAI, MAKH, MANV) VALUES( @MAHD, @NGAYLAP, @TRANGTHAI, @MAKH, @MANV)
+--	END
+--GO
+-- sql = @"EXEC THEM_HOADON '"+txtmahd.Text.Trim() + "', '"+txtngaylap.Text.Trim()+"', N'"+cbotrangthai.Text.Trim() +"', '"+txtmakh.Text.Trim() +"', '"+txtmanv.Text.Trim() +"'";
+
+
+
+--CREATE PROC XOA_HOADON @MAHD CHAR(15)
+--AS
+--	BEGIN
+--		DELETE FROM HOADON WHERE MAHD = @MAHD
+--	END
+--GO
+-- sql = @"EXEC XOA_HOADON '"+txtmahd.Text.Trim() +"'";
+--GO
+
+
+--CREATE PROC SUA_HOADON @MAHD CHAR(15), @NGAYLAP DATE, @TRANGTHAI NVARCHAR(30), @MAKH CHAR(15), @MANV CHAR(15), @TAM CHAR(15)
+--AS
+--	BEGIN
+--		UPDATE HOADON SET MAHD = @MAHD, NGAYLAP = @NGAYLAP, TRANGTHAI = @TRANGTHAI, MAKH = @MAKH, MANV = @MANV WHERE MAHD = @TAM
+--	END
+--GO
+-- string sql = @"EXEC SUA_HOADON '" + txtmahd.Text.Trim() + "','" + txtngaylap.Text.Trim() + "', N'" + cbotrangthai.Text.Trim() + "', '" + txtmakh.Text.Trim() + "', '" + txtmanv.Text.Trim() + "', '" + item.SubItems[0].Text + "'";
+--/*=====================================================================BẢNG NHÂN VIÊN========================================================================*/
+--CREATE PROC HIENTHI_NHANVIEN
+--AS
+--	BEGIN
+--		SELECT * FROM NHANVIEN
+--	END
+--GO
+--sql = @"EXEC HIENTHI_NHANVIEN";
+
+
+
+
+--CREATE PROC THEM_NHANVIEN @MANV CHAR(15), @TENNV NVARCHAR(30), @CHUCVU NVARCHAR(30), @MNQL CHAR(15)
+--AS
+--	BEGIN
+--		INSERT INTO NHANVIEN(MANV, TENNV, CHUCVU, MANV_QUANLY) VALUES(@MANV, @TENNV, @CHUCVU, @MNQL)
+--	END
+--GO
+-- sql = @"EXEC THEM_NHANVIEN '"+txtmanv.Text.Trim() +"', N'"+txttennv.Text.Trim() +"', N'"+txtchucvu.Text.Trim() +"', '"+txtnguoiql.Text.Trim() +"'";
+
+
+
+--CREATE PROC SUA_NHANVIEN @MANV CHAR(15), @TENNV NVARCHAR(30), @CHUCVU NVARCHAR(30), @MNQL CHAR(15), @TAM CHAR(15)
+--AS
+--	BEGIN
+--		UPDATE NHANVIEN SET MANV = @MANV, TENNV = @TENNV, CHUCVU = @CHUCVU, MANV_QUANLY = @MNQL WHERE MANV = @TAM 
+--	END
+--GO
+--  string sql = @"EXEC SUA_NHANVIEN '" + txtmanv.Text.Trim() + "', N'" + txttennv.Text.Trim() + "', N'" + txtchucvu.Text.Trim() + "', '" + txtnguoiql.Text.Trim() + "', '" + item.SubItems[0].Text + "'";
+--/*=====================================================================BẢNG VIEW khách hàng==================================================================*/
+--CREATE PROC HIENTHI_KHACHHANG_VIEW 
+--AS
+--	BEGIN
+--		SELECT * FROM KHACHHANG_VIEW
+--	END
+--GO
+--  sql = @"EXEC HIENTHI_KHACHHANG_VIEW";
+
+
+--GO
+--CREATE PROC THEM_KHACH_VIEW @MAKH CHAR(15), @TENKH NVARCHAR(30), @DIACHI NVARCHAR(30), @SODT CHAR(15)
+--AS
+--	BEGIN
+--		INSERT INTO KHACHHANG_VIEW(MAKH, TENKH, DIACHI, SODT) VALUES(@MAKH, @TENKH, @DIACHI, @SODT)
+--	END
+--GO
+-- sql = @"EXEC THEM_KHACH_VIEW '"+txtmakh.Text.Trim()+"', N'"+txttenkh.Text.Trim() + "', N'"+txtdiachi.Text.Trim() + "', '"+txtdiachi.Text.Trim() + "'";
+
+
+
+
+--CREATE PROC XOA_KHACH_VIEW @MAKH CHAR(15)
+--AS
+--	BEGIN
+--		DELETE FROM KHACHHANG_VIEW WHERE MAKH = @MAKH
+--	END
+--GO
+--sql = @"EXEC XOA_KHACH_VIEW '"+txtmakh.Text.Trim() + "'";
+
+
+--CREATE PROC SUA_KHACHHANG_VIEW @MAKH CHAR(15), @TENKH NVARCHAR(30), @DIACHI NVARCHAR(30), @SODT NVARCHAR(30), @TAM CHAR(15)
+--AS
+--	BEGIN
+--		UPDATE KHACHHANG_VIEW SET MAKH = @MAKH,TENKH =@TENKH, DIACHI =@DIACHI, SODT = @SODT WHERE MAKH = @TAM
+--	END
+--GO
+--sql = @"EXEC SUA_KHACHHANG_VIEW '" + txtmakh.Text.Trim() + "', N'" + txttenkh.Text.Trim() + "',N'" + txtdiachi.Text.Trim() + "', '" + txtsodt.Text.Trim() + "','" + item.SubItems[0].Text + "'";
+--/*=====================================================================BẢNG Hàng Hóa==================================================================*/
+--CREATE PROC HIENTHI_HANGHOA
+--AS
+--	BEGIN
+--		SELECT * FROM HANGHOA
+--	END
+--GO
+--sql = @"EXEC HIENTHI_HANGHOA";
+
+
+
+--CREATE PROC THEM_HANGHOC @MAHG CHAR(15), @TENHG NVARCHAR(30), @DVT NVARCHAR(30), @MALOAI CHAR(15)
+--AS
+--	BEGIN
+--		INSERT INTO HANGHOA(MAHG, TENHANG, DVT, MALOAI) VALUES(@MAHG, @TENHG, @DVT, @MALOAI)
+--	END
+--GO
+--sql = @"EXEC THEM_HANGHOA '" + txtmahg.Text.Trim()+"', N'"+txttenhang.Text.Trim()+"', N'"+txtdvt.Text.Trim() + "', '"+txtmaloai.Text.Trim() + "'";
+
+
+
+--CREATE PROC XOA_HANGHOA @MAHG CHAR(15)
+--AS
+--	BEGIN
+--		DELETE FROM HANGHOA WHERE MAHG=@MAHG
+--	END
+--GO
+--sql = @"EXEC XOA_HANGHOA '"+txtmahg.Text+"'";
+
+
+--CREATE PROC SUA_HANGHOA @MAHG CHAR(15), @TENHANG NVARCHAR(30), @DVT NVARCHAR(30), @MALOAI CHAR(15), @TAM CHAR(15)
+--AS
+--	BEGIN
+--		UPDATE HANGHOA SET MAHG = @MAHG, TENHANG = @TENHANG, DVT = @DVT, MALOAI = @MALOAI WHERE MAHG = @TAM
+--	END
+--GO
+--string sql = @"EXEC SUA_HANGHOA '"+ txtmahg.Text.Trim() + "', N'@"+ txttenhang.Text.Trim() + "', N'"+ txtdvt.Text.Trim() + "', '"+ txtmaloai.Text.Trim() + "', '" + item.SubItems[0].Text + "'";

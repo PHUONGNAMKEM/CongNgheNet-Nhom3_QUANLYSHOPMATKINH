@@ -1,0 +1,329 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.OleDb;
+using System.Data.SqlClient;
+using System.IO;
+using ExcelDataReader;
+using ClosedXML.Excel;
+using System.Net.Mail;
+
+namespace DEAN_SQL
+{
+    public partial class WorkWithData : Form
+    {
+
+        //public string connectionString = "Data Source=LAPTOP-7VLSR7BE\\SQLEXPRESS;Initial Catalog=DEAN4;User ID=sa";
+        public SqlConnection con;
+        public string user, pass, server, data, constr;
+        public WorkWithData(string phanQuyen, string username, string password, string servername, string database)
+        {
+            InitializeComponent();
+            user = username;
+            pass = password;
+            server = servername;
+            data = database;
+            lblPhanQuyen.Text = phanQuyen;
+            constr = "Server=" + server + ";Database=" + data + ";User Id=" + user + ";Password=" + pass + ";";
+            con = new SqlConnection(constr);
+            
+        }
+         
+        private void btnReturnAdminPage_Click(object sender, EventArgs e)
+        {
+            AppForAdmin returnApp = new AppForAdmin(lblPhanQuyen.Text,  user, pass, server, data);
+            returnApp.Show();
+            this.Close();
+        }
+
+        private void cboChooseSheet_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            DataTable dt = tableCollection[cboChooseSheet.SelectedItem.ToString()];
+            dgvwShowData.DataSource = dt; //cập nhật datagridview dựa vào nguồn dữ liệu lấy từ biến dt ở trên
+        }
+
+        DataTableCollection tableCollection;// chứa các sheet dữ liệu từ file excel đã đọc - mỗi sheet ở dạng datatable
+
+        private void btnBrowse_Click(object sender, EventArgs e)
+        {
+            //using (OpenFileDialog openFileDialog = new OpenFileDialog() { Filter = "Excel Workbook|*.xlsx|Excel 97-2003 Workbook|*.xls|CSV File|*.csv" })
+            using (OpenFileDialog openFileDialog = new OpenFileDialog() { Filter = "Excel 97-2003 Workbook|*.xls|Excel Workbook|*.xlsx" })
+            {
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    txtFilePath.Text = openFileDialog.FileName;
+                    using (var stream = File.Open(openFileDialog.FileName, FileMode.Open, FileAccess.Read))
+                    {
+                        using (IExcelDataReader reader = ExcelReaderFactory.CreateReader(stream))
+                        {
+                            //Đọc dữ liệu từ file excel lưu vào result (DataSet là một tập hợp các DataTable)
+                            DataSet result = reader.AsDataSet(new ExcelDataSetConfiguration()
+                            {
+                                //Cấu hình cách đọc dữ liệu vào từng DataTabel trong DataSet
+                                ConfigureDataTable = (_) => new ExcelDataTableConfiguration() { UseHeaderRow = true }
+                                //UseHeaderRow = true -> sử dụng dòng đầu tiên trong file excel làm tên cột cho các cột trong bảng sql
+                            });
+                            tableCollection = result.Tables;
+                            cboChooseSheet.Items.Clear();
+                            foreach (DataTable table in tableCollection)
+                                cboChooseSheet.Items.Add(table.TableName); // thêm các sheet vô combobox 
+                        }
+                    }
+                }
+            }
+        }
+
+        //Đọc dữ liệu từ excel đưa vô một bảng có sẵn trong database 
+        private void btnImport_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Kiểm tra xem đã chọn sheet nào chưa
+                if (cboChooseSheet.SelectedIndex == -1)
+                {
+                    MessageBox.Show("Vui lòng chọn sheet cần import!");
+                    return;
+                }
+
+                // Kiểm tra xem đã chọn bảng đích nào chưa
+                if (cboDestinationTable.SelectedIndex == -1)
+                {
+                    MessageBox.Show("Vui lòng chọn bảng đích để import!");
+                    return;
+                }
+
+                // Lấy DataTable từ sheet đã chọn
+                DataTable dt = tableCollection[cboChooseSheet.SelectedItem.ToString()];
+
+                // Tạo câu lệnh SQL INSERT
+                //string tableName = "KHACHHANG";  // Thay thế bằng tên bảng đích trong SQL Server
+                string tableName = cboDestinationTable.SelectedItem.ToString();
+
+                con.Open();
+
+                // Mở kết nối đến SQL Server
+                using (SqlConnection con = new SqlConnection(constr))
+                {
+                    con.Open();
+
+                    // Dùng SqlBulkCopy để nhập dữ liệu
+                    // ĐÂY LÀ CÁCH DÙNG SQLBULKCOPY -> ƯU ĐIỂM LÀ NHANH HƠN CHO DỮ LIỆU LỚN, TỰ ĐỘNG TẠO INSERT KO CẦN THỦ CÔNG NHƯ STRINGBUILDER
+                    using (SqlBulkCopy bulkCopy = new SqlBulkCopy(con))
+                    {
+                        bulkCopy.DestinationTableName = tableName;
+                        bulkCopy.WriteToServer(dt);
+                    }
+                }
+
+                MessageBox.Show("Import dữ liệu thành công!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi import dữ liệu: " + ex.Message);
+            }
+            finally
+            {
+                con.Close();
+            }
+        }
+
+        private void btnExport_Click(object sender, EventArgs e)
+        {
+            //Kiểm tra rỗng table cần export ra excel
+            if (cboChooseTableToExport.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a table to export.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            string selectedTable = cboChooseTableToExport.SelectedItem.ToString();
+
+            //using (SaveFileDialog sfd = new SaveFileDialog() { Filter = "Excel Workbook|*.xlsx|CSV File|*.csv" })
+            using (SaveFileDialog sfd = new SaveFileDialog() { Filter = "Excel Workbook|*.xlsx" })
+            {
+                if (sfd.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        using (XLWorkbook workbook = new XLWorkbook())
+                        {
+                            using (SqlConnection connection = new SqlConnection( constr))
+                            {
+                                connection.Open();
+
+                                // Lấy dữ liệu từ bảng được chọn
+                                using (SqlDataAdapter adapter = new SqlDataAdapter($"SELECT * FROM {selectedTable}", connection))
+                                {
+                                    DataTable tableData = new DataTable();
+                                    adapter.Fill(tableData);
+
+                                    // Thêm dữ liệu vào workbook
+                                    workbook.Worksheets.Add(tableData, selectedTable);
+                                }
+                            }
+
+                            workbook.SaveAs(sfd.FileName);
+                        }
+
+                        MessageBox.Show("Export successful", "Notification", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void WorkWithData_Load(object sender, EventArgs e)
+        {
+            using (SqlConnection connection = new SqlConnection(constr))
+            {
+                connection.Open();
+
+                DataTable tables = connection.GetSchema("Tables"); //Lấy danh sách tất cả các bảng trong csdl (trả về một datatable)
+                foreach (DataRow row in tables.Rows)
+                {
+                    string tableName = row["TABLE_NAME"].ToString();
+                    cboChooseTableToExport.Items.Add(tableName);
+                }
+            }
+            using (SqlConnection connection = new SqlConnection(constr))
+            {
+                connection.Open();
+
+                DataTable tables = connection.GetSchema("Tables");
+                cboDestinationTable.Items.Clear();
+                foreach (DataRow row in tables.Rows)
+                {
+                    string tableName = row["TABLE_NAME"].ToString();
+                    cboDestinationTable.Items.Add(tableName);
+                }
+            }
+        }
+
+        private void btnExportAll_Click(object sender, EventArgs e)
+        {
+            using (SaveFileDialog sfd = new SaveFileDialog() { Filter = "Excel Workbook|*.xlsx" })
+            {
+                if (sfd.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        using (XLWorkbook workbook = new XLWorkbook())
+                        {
+                            // Kết nối tới cơ sở dữ liệu
+                            using (SqlConnection connection = new SqlConnection(constr))
+                            {
+                                connection.Open();
+
+                                // Lấy danh sách tất cả các bảng trong cơ sở dữ liệu
+                                DataTable tables = connection.GetSchema("Tables");
+
+                                foreach (DataRow row in tables.Rows)
+                                {
+                                    string tableName = row["TABLE_NAME"].ToString();
+
+                                    // Lấy dữ liệu từ từng bảng
+                                    using (SqlDataAdapter adapter = new SqlDataAdapter($"SELECT * FROM {tableName}", connection))
+                                    {
+                                        DataTable tableData = new DataTable();
+                                        adapter.Fill(tableData);
+
+                                        // Thêm dữ liệu vào workbook
+                                        workbook.Worksheets.Add(tableData, tableName);
+                                    }
+                                }
+                            }
+                            workbook.SaveAs(sfd.FileName);
+                        }
+                        MessageBox.Show("Successfully", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void btnImportNewTable_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Kiểm tra xem đã chọn sheet nào chưa
+                if (cboChooseSheet.SelectedIndex == -1)
+                {
+                    MessageBox.Show("Vui lòng chọn sheet cần import!");
+                    return;
+                }
+
+                // Kiểm tra nếu người dùng muốn tạo bảng mới
+                string tableName;
+                if (!string.IsNullOrWhiteSpace(txtNewTableName.Text))
+                {
+                    // Người dùng nhập tên bảng mới
+                    tableName = txtNewTableName.Text;
+                }
+                else if (cboDestinationTable.SelectedIndex != -1)
+                {
+                    // Người dùng chọn bảng đã tồn tại từ combobox
+                    tableName = cboDestinationTable.SelectedItem.ToString();
+                }
+                else
+                {
+                    MessageBox.Show("Vui lòng chọn bảng đích hoặc nhập tên bảng mới!");
+                    return;
+                }
+
+                // Lấy DataTable từ sheet đã chọn
+                DataTable dt = tableCollection[cboChooseSheet.SelectedItem.ToString()];
+
+                using (SqlConnection connection = new SqlConnection(constr))
+                {
+                    con.Open();
+
+                    // Kiểm tra nếu người dùng muốn tạo bảng mới
+                    if (!string.IsNullOrWhiteSpace(txtNewTableName.Text))
+                    {
+                        // Tạo bảng mới trong SQL Server
+                        using (SqlCommand cmd = new SqlCommand($"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '{tableName}') BEGIN CREATE TABLE {tableName} (", con))
+                        {
+                            foreach (DataColumn column in dt.Columns)
+                            {
+                                string sqlDataType = "NVARCHAR(MAX)"; // mặc định là NVARCHAR(MAX)
+                                if (column.DataType == typeof(int))
+                                    sqlDataType = "INT";
+                                else if (column.DataType == typeof(DateTime))
+                                    sqlDataType = "DATETIME";
+
+                                cmd.CommandText += $"{column.ColumnName} {sqlDataType},";
+                            }
+                            cmd.CommandText = cmd.CommandText.TrimEnd(',') + "); END";
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+                    // Dùng SqlBulkCopy để nhập dữ liệu
+                    using (SqlBulkCopy bulkCopy = new SqlBulkCopy(con))
+                    {
+                        bulkCopy.DestinationTableName = tableName;
+                        bulkCopy.WriteToServer(dt);
+                    }
+
+                    MessageBox.Show("Import dữ liệu thành công!");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi import dữ liệu: " + ex.Message);
+            }
+        }
+    }
+}
