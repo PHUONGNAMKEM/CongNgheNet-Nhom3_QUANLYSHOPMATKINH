@@ -90,6 +90,7 @@ namespace DEAN_SQL
     {
         private Timer timer_logout;
         string connString, user, pass, server, data;
+        public SqlConnection conn;
 
         public App(string phanQuyen, string name, string password, string servername, string database)
         {
@@ -107,22 +108,55 @@ namespace DEAN_SQL
             connString = "Server=" +server + ";Database=" + data + ";User Id=" + user + ";Password=" + pass + ";";
         }
 
+        //private void btnlogout_Click(object sender, EventArgs e)
+        //{
+        //    DatabaseConnection.InitializeConnection(connString);
+        //    try
+        //    {
+        //        // Đăng xuất và đóng tất cả các form khác
+        //        timer_logout.Stop();
+
+        //        // Đảm bảo kết nối mở trước khi thực hiện lệnh
+        //        if (DatabaseConnection.con.State == ConnectionState.Closed)
+        //        {
+        //            DatabaseConnection.con.Open();
+        //        }
+
+        //        string query = "EXEC DELETE_ALL_USERNAME_IN_USERSESSIONS '" + user + "'";
+        //        //string query = "DELETE FROM UserSessions WHERE UserID = @UserID";
+        //        using (SqlCommand cmd = new SqlCommand(query, DatabaseConnection.con))
+        //        {
+        //            cmd.Parameters.AddWithValue("@UserID", user);
+        //            cmd.ExecuteNonQuery();
+        //        }
+        //        //MessageBox.Show("Người dùng " + DangNhap.dangNhap + " đã đăng xuất", "Thông báo");
+
+        //        // Hiển thị form đăng nhập và đóng form hiện tại
+        //        Form1 login = new Form1();
+        //        login.Location = this.Location; // Đặt form login ở vị trí của form hiện tại
+        //        login.Show();
+        //        this.Close();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show("Error-------> " + ex.Message);
+        //    }
+        //}
         private void btnlogout_Click(object sender, EventArgs e)
         {
-            DatabaseConnection.InitializeConnection(connString);
+
+            //DatabaseConnection.InitializeConnection(connString);
             try
             {
                 // Đăng xuất và đóng tất cả các form khác
                 timer_logout.Stop();
-
                 // Đảm bảo kết nối mở trước khi thực hiện lệnh
-                if (DatabaseConnection.con.State == ConnectionState.Closed)
-                {
-                    DatabaseConnection.con.Open();
-                }
+                conn = new SqlConnection(connString);
+                conn.Open();
 
-                string query = "DELETE FROM UserSessions WHERE UserID = @UserID";
-                using (SqlCommand cmd = new SqlCommand(query, DatabaseConnection.con))
+                //string query = "DELETE FROM UserSessions WHERE UserID = @UserID";
+                string query = "EXEC DELETE_ALL_USERNAME_IN_USERSESSIONS '" + user + "'";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@UserID", user);
                     cmd.ExecuteNonQuery();
@@ -145,24 +179,18 @@ namespace DEAN_SQL
         {
             try
             {
-                // Đảm bảo kết nối mở trước khi thực hiện lệnh
-                if (DatabaseConnection.con.State == ConnectionState.Closed)
-                {
-                    DatabaseConnection.con.Open();
-                }
-
-                string query = "SELECT * FROM UserSessions WHERE UserID = @UserID";
-                using (SqlDataAdapter sda = new SqlDataAdapter(query, DatabaseConnection.con))
+                conn = new SqlConnection(connString);
+                conn.Open();
+                //string query = "SELECT * FROM UserSessions WITH (NOLOCK) WHERE UserID = @UserID";
+                string query = "SELECT * FROM dbo.GET_USER_ID('" + user + "')"; //SỬ DỤNG HÀM Ở ĐÂY!
+                using (SqlDataAdapter sda = new SqlDataAdapter(query, conn))
                 {
                     sda.SelectCommand.Parameters.AddWithValue("@UserID", user);
                     DataTable dTable = new DataTable();
                     sda.Fill(dTable);
-
                     if (dTable.Rows.Count == 0)
                     {
                         timer_logout.Stop();
-                        //MessageBox.Show("Người dùng " + DangNhap.dangNhap + " đã đăng xuất", "Thông báo");
-
                         // Hiển thị form đăng nhập và đóng form chính
                         Form1 login = new Form1();
                         login.Location = this.Location; // Đặt form login ở vị trí của form hiện tại
@@ -176,6 +204,43 @@ namespace DEAN_SQL
                 //MessageBox.Show("Error-------> " + ex.Message);
             }
         }
+
+        //private void timer_logout_Tick(object sender, EventArgs e)
+        //{
+        //    try
+        //    {
+        //        // Đảm bảo kết nối mở trước khi thực hiện lệnh
+        //        if (DatabaseConnection.con.State == ConnectionState.Closed)
+        //        {
+        //            DatabaseConnection.con.Open();
+        //        }
+
+        //        //string query = "SELECT * FROM UserSessions WHERE UserID = @UserID";
+        //        string query = "SELECT * FROM dbo.GET_USER_ID('" + user + "')"; //SỬ DỤNG HÀM Ở ĐÂY!
+        //        using (SqlDataAdapter sda = new SqlDataAdapter(query, DatabaseConnection.con))
+        //        {
+        //            sda.SelectCommand.Parameters.AddWithValue("@UserID", user);
+        //            DataTable dTable = new DataTable();
+        //            sda.Fill(dTable);
+
+        //            if (dTable.Rows.Count == 0)
+        //            {
+        //                timer_logout.Stop();
+        //                //MessageBox.Show("Người dùng " + DangNhap.dangNhap + " đã đăng xuất", "Thông báo");
+
+        //                // Hiển thị form đăng nhập và đóng form chính
+        //                Form1 login = new Form1();
+        //                login.Location = this.Location; // Đặt form login ở vị trí của form hiện tại
+        //                login.Show();
+        //                this.Close();
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //MessageBox.Show("Error-------> " + ex.Message);
+        //    }
+        //}
 
         private void btnnew_Click(object sender, EventArgs e)
         {

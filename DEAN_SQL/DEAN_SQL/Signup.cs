@@ -74,8 +74,6 @@ namespace DEAN_SQL
             }
         }
 
-
-
         private void btnclear_Click(object sender, EventArgs e)
         {
             txtUsername.Clear();
@@ -83,7 +81,6 @@ namespace DEAN_SQL
             txtrePassword.Clear();
             txtUsername.Focus();
         }
-
 
 
         private void lbllogin_Click(object sender, EventArgs e)

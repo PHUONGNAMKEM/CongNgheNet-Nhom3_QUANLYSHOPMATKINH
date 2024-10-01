@@ -13,11 +13,21 @@ namespace DEAN_SQL
 {
     public partial class ThongTinNhanVien : Form
     {
-        public ThongTinNhanVien()
+        //public ThongTinNhanVien()
+        //{
+        //    InitializeComponent();
+        //}
+        //string connectionString = "Server=" + "localhost" + "\\SQLEXPRESS02" + ";Database=" + "DEAN4" + ";User Id=" + DangNhap.name + ";Password=" + DangNhap.password + ";";
+        public string user, pass, server, data, connectionString;
+        public ThongTinNhanVien(string username, string password, string servername, string database)
         {
             InitializeComponent();
+            user = username;
+            pass = password;
+            server = servername;
+            data = database;
+            connectionString = "Server=" + server + ";Database=" + data + ";User Id=" + user + ";Password=" + pass + ";";
         }
-        string connectionString = "Server=" + "localhost" + "\\SQLEXPRESS" + ";Database=" + "DEAN4" + ";User Id=" + DangNhap.name + ";Password=" + DangNhap.password + ";";
         SqlConnection conn;
         SqlCommand cmd;
         SqlDataReader read;
@@ -38,7 +48,8 @@ namespace DEAN_SQL
             i = 0;
             lst_dl.Items.Clear();
             conn.Open();
-            sql = @"SELECT * FROM THONGTINNHANVIEN";
+            //sql = @"SELECT * FROM THONGTINNHANVIEN";
+            sql = @"EXEC DISPLAY_THONGTINNHANVIEN";
             cmd = new SqlCommand(sql, conn);
             read = cmd.ExecuteReader();
             while (read.Read())
@@ -63,13 +74,13 @@ namespace DEAN_SQL
         }
 
         private void btnthem_Click(object sender, EventArgs e)
-        {
+        {   
             if (txtmanv.TextLength != 0)
             {
                 try
                 {
                     conn.Open();
-                    sql = @"INSERT INTO THONGTINNHANVIEN(MANV, NGAYSINH, GIOITINH, CMND, EMAIL) VALUES('" + txtmanv.Text.Trim() + "',N'" + txtngaysinh.Text.Trim() + "',N'" + cbogioitinh.Text.Trim() + "','" + txtcmnd.Text.Trim() + "','"+txtemail.Text.Trim()+"')";
+                    sql = @"EXEC INSERT_THONGTINNHANVIEN '"+txtmanv.Text+"', '"+txtngaysinh.Text+"', N'"+cbogioitinh.Text+"', '"+txtcmnd.Text+"', '"+txtemail.Text+"'";
                     cmd = new SqlCommand(sql, conn);
                     cmd.ExecuteNonQuery();
                     conn.Close();
@@ -92,7 +103,8 @@ namespace DEAN_SQL
             try
             {
                 conn.Open();
-                sql = @"DELETE FROM THONGTINNHANVIEN WHERE MANV = '" + txtmanv.Text.Trim() + "'";
+                //sql = @"DELETE FROM THONGTINNHANVIEN WHERE MANV = '" + txtmanv.Text.Trim() + "'";
+                sql = @"EXEC DELETE_THONGTINNHANVIEN '"+txtmanv.Text+"'";
                 cmd = new SqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 conn.Close();
@@ -111,14 +123,15 @@ namespace DEAN_SQL
             try
             {
                 conn.Open();
-                string sql = @"UPDATE THONGTINNHANVIEN SET MANV = @MANV, NGAYSINH = @NGAYSINH, GIOITINH = @GIOITINH, CMND = @CMND, EMAIL = @EMAIL WHERE MANV = '" + item.SubItems[0].Text+ "'";
+                //string sql = @"UPDATE THONGTINNHANVIEN SET MANV = @MANV, NGAYSINH = @NGAYSINH, GIOITINH = @GIOITINH, CMND = @CMND, EMAIL = @EMAIL WHERE MANV = '" + item.SubItems[0].Text+ "'";
+                string sql = @"EXEC UPDATE_THONGTINNHANVIEN '"+ item.SubItems[0].Text + "', '"+txtmanv.Text.Trim()+"', '"+txtngaysinh.Text+"', N'"+cbogioitinh.Text.Trim()+"', '"+txtcmnd.Text.Trim()+"', '"+txtemail.Text.Trim()+"'";
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@MANV", txtmanv.Text.Trim());
-                    cmd.Parameters.AddWithValue("@NGAYSINH", txtngaysinh.Text.Trim());
-                    cmd.Parameters.AddWithValue("@GIOITINH", cbogioitinh.Text.Trim());
-                    cmd.Parameters.AddWithValue("@CMND", txtcmnd.Text.Trim());
-                    cmd.Parameters.AddWithValue("@EMAIL", txtemail.Text.Trim());
+                    //cmd.Parameters.AddWithValue("@MANV", txtmanv.Text.Trim());
+                    //cmd.Parameters.AddWithValue("@NGAYSINH", txtngaysinh.Text.Trim());
+                    //cmd.Parameters.AddWithValue("@GIOITINH", cbogioitinh.Text.Trim());
+                    //cmd.Parameters.AddWithValue("@CMND", txtcmnd.Text.Trim());
+                    //cmd.Parameters.AddWithValue("@EMAIL", txtemail.Text.Trim());
                     cmd.ExecuteNonQuery();
                 }
                 conn.Close();

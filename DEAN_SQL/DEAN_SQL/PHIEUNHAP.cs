@@ -13,11 +13,16 @@ namespace DEAN_SQL
 {
     public partial class PHIEUNHAP : Form
     {
-        public PHIEUNHAP()
+        public string user, pass, server, data, connectionString;
+        public PHIEUNHAP(string username, string password, string servername, string database)
         {
             InitializeComponent();
+            user = username;
+            pass = password;
+            server = servername;
+            data = database;
+            connectionString = "Server=" + server + ";Database=" + data + ";User Id=" + user + ";Password=" + pass + ";";
         }
-        string connectionString = "Server=" + "localhost" + "\\SQLEXPRESS" + ";Database=" + "DEAN4" + ";User Id=" + DangNhap.name + ";Password=" + DangNhap.password + ";";
         SqlConnection conn;
         SqlCommand cmd;
         SqlDataReader read;
@@ -33,7 +38,8 @@ namespace DEAN_SQL
             i = 0;
             lst_dl.Items.Clear();
             conn.Open();
-            sql = @"SELECT * FROM PHIEUNHAP";
+            //sql = @"SELECT * FROM PHIEUNHAP";
+            sql = @"select * from dbo.F_HIENTHI_PHIEUNHAP()";
             cmd = new SqlCommand(sql, conn);
             read = cmd.ExecuteReader();
             while (read.Read())
@@ -54,7 +60,8 @@ namespace DEAN_SQL
                 try
                 {
                     conn.Open();
-                    sql = @"INSERT INTO PHIEUNHAP(MAPN, NGAYNHAP, MANCC, MANV) VALUES('" + txtmapn.Text.Trim() + "',N'" + txtngaynhap.Text.Trim() + "',N'" + txtmancc.Text.Trim() + "','" + txtmanv.Text.Trim() + "')";
+                    //sql = @"INSERT INTO PHIEUNHAP(MAPN, NGAYNHAP, MANCC, MANV) VALUES('" + txtmapn.Text.Trim() + "',N'" + txtngaynhap.Text.Trim() + "',N'" + txtmancc.Text.Trim() + "','" + txtmanv.Text.Trim() + "')";
+                    sql = @"EXEC THEM_PHIEUNHAP '" + txtmapn.Text.Trim() + "', '" + txtngaynhap.Text.Trim() + "', '" + txtmancc.Text.Trim() + "', '" + txtmanv.Text.Trim() + "'";
                     cmd = new SqlCommand(sql, conn);
                     cmd.ExecuteNonQuery();
                     conn.Close();
@@ -77,7 +84,8 @@ namespace DEAN_SQL
             try
             {
                 conn.Open();
-                sql = @"DELETE FROM PHIEUNHAP WHERE MAPN = '" + txtmapn.Text.Trim() + "'";
+                //sql = @"DELETE FROM PHIEUNHAP WHERE MAPN = '" + txtmapn.Text.Trim() + "'";
+                sql = @"EXEC XOA_PHIEUNHAP '" + txtmapn.Text.Trim() + "'";
                 cmd = new SqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 conn.Close();

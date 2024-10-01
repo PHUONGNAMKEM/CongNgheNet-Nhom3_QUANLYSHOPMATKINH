@@ -13,11 +13,16 @@ namespace DEAN_SQL
 {
     public partial class CHITIETPN : Form
     {
-        public CHITIETPN()
+        public string user, pass, server, data, connectionString;
+        public CHITIETPN(string username, string password, string servername, string database)
         {
             InitializeComponent();
+            user = username;
+            pass = password;
+            server = servername;
+            data = database;
+            connectionString = "Server=" + server + ";Database=" + data + ";User Id=" + user + ";Password=" + pass + ";";
         }
-        string connectionString = "Server=" + "localhost" + "\\SQLEXPRESS" + ";Database=" + "DEAN4" + ";User Id=" + DangNhap.name + ";Password=" + DangNhap.password + ";";
         SqlConnection conn;
         SqlCommand cmd;
         SqlDataReader read;
@@ -33,7 +38,8 @@ namespace DEAN_SQL
             i = 0;
             lst_dl.Items.Clear();
             conn.Open();
-            sql = @"SELECT * FROM CHITIETPN";
+            //sql = @"SELECT * FROM CHITIETPN";
+            sql = @"select * from dbo.F_HIENTHI_CHITIETPN()";
             cmd = new SqlCommand(sql, conn);
             read = cmd.ExecuteReader();
             while (read.Read())
@@ -58,7 +64,8 @@ namespace DEAN_SQL
                 try
                 {
                     conn.Open();
-                    sql = @"INSERT INTO CHITIETPN(MAPN, MAHG, SOLUONG, GIABAN) VALUES('" + txtmapn.Text.Trim() + "',N'" + txtmahang.Text.Trim() + "',N'" + txtsoluong.Text.Trim() + "','" + txtgiaban.Text.Trim() + "')";
+                    //sql = @"INSERT INTO CHITIETPN(MAPN, MAHG, SOLUONG, GIABAN) VALUES('" + txtmapn.Text.Trim() + "',N'" + txtmahang.Text.Trim() + "',N'" + txtsoluong.Text.Trim() + "','" + txtgiaban.Text.Trim() + "')";
+                    sql = @"EXEC THEM_CHITIETPN '" + txtmapn.Text.Trim() + "', '" + txtmahang.Text.Trim() + "', " + txtsoluong.Text.Trim() + ", " + txtgiaban.Text.Trim() + ")";
                     cmd = new SqlCommand(sql, conn);
                     cmd.ExecuteNonQuery();
                     conn.Close();
@@ -81,7 +88,8 @@ namespace DEAN_SQL
             try
             {
                 conn.Open();
-                sql = @"DELETE FROM CHITIETPN WHERE MAPN = '" + txtmapn.Text.Trim() + "' AND MAHG = '"+txtmahang.Text.Trim()+"'";
+                //sql = @"DELETE FROM CHITIETPN WHERE MAPN = '" + txtmapn.Text.Trim() + "' AND MAHG = '"+txtmahang.Text.Trim()+"'";
+                sql = @"EXEC XOA_CHITIETPN '" + txtmapn.Text.Trim() + "', '" + txtmahang.Text.Trim() + "'";
                 cmd = new SqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 conn.Close();
@@ -100,7 +108,8 @@ namespace DEAN_SQL
             try
             {
                 conn.Open();
-                string sql = @"UPDATE CHITIETPN SET MAPN = @MAPN, MAHG = @MAHG, SOLUONG = @SOLUONG, GIABAN = @GIABAN WHERE MAPN = @MAPN AND MAHG = '" + item.SubItems[0].Text + "'";
+                //string sql = @"UPDATE CHITIETPN SET MAPN = @MAPN, MAHG = @MAHG, SOLUONG = @SOLUONG, GIABAN = @GIABAN WHERE MAPN = @MAPN AND MAHG = '" + item.SubItems[0].Text + "'";
+                string sql = @"EXEC SUA_CHITIETPN @MAPN, @MAHG, @SOLUONG, @GIABAN,'" + item.SubItems[0].Text + "','" + item.SubItems[1].Text + "'";
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@MAPN", txtmapn.Text.Trim());

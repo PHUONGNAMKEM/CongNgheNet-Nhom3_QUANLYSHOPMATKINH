@@ -13,11 +13,16 @@ namespace DEAN_SQL
 {
     public partial class NHACC : Form
     {
-        public NHACC()
+        public string user, pass, server, data, connectionString;
+        public NHACC(string username, string password, string servername, string database)
         {
             InitializeComponent();
+            user = username;
+            pass = password;
+            server = servername;
+            data = database;
+            connectionString = "Server=" + server + ";Database=" + data + ";User Id=" + user + ";Password=" + pass + ";";
         }
-        string connectionString = "Server=" + "localhost" + "\\SQLEXPRESS" + ";Database=" + "DEAN4" + ";User Id=" + DangNhap.name + ";Password=" + DangNhap.password + ";";
         SqlConnection conn;
         SqlCommand cmd;
         SqlDataReader read;
@@ -33,7 +38,8 @@ namespace DEAN_SQL
             i = 0;
             lst_dl.Items.Clear();
             conn.Open();
-            sql = @"SELECT * FROM NHACC";
+            //sql = @"SELECT * FROM NHACC";
+            sql = @"select * from dbo.F_HIENTHI_NHACC()";
             cmd = new SqlCommand(sql, conn);
             read = cmd.ExecuteReader();
             while (read.Read())
@@ -62,7 +68,8 @@ namespace DEAN_SQL
                 try
                 {
                     conn.Open();
-                    sql = @"INSERT INTO NHACC(MANCC, TENNCC, DIACHI, SODT) VALUES('" + txtmancc.Text.Trim() + "',N'" + txttenncc.Text.Trim() + "',N'" + txtdiachi.Text.Trim() + "','" + txtsodt.Text.Trim() + "')";
+                    //sql = @"INSERT INTO NHACC(MANCC, TENNCC, DIACHI, SODT) VALUES('" + txtmancc.Text.Trim() + "',N'" + txttenncc.Text.Trim() + "',N'" + txtdiachi.Text.Trim() + "','" + txtsodt.Text.Trim() + "')";
+                    sql = @"EXEC THEM_NHACC '" + txtmancc.Text.Trim() + "', N'" + txttenncc.Text.Trim() + "', N'" + txttenncc.Text.Trim() + "', '" + txtsodt.Text.Trim() + "'";
                     cmd = new SqlCommand(sql, conn);
                     cmd.ExecuteNonQuery();
                     conn.Close();
@@ -85,7 +92,8 @@ namespace DEAN_SQL
             try
             {
                 conn.Open();
-                sql = @"DELETE FROM NHACC WHERE MANCC = '" + txtmancc.Text.Trim() + "'";
+                //sql = @"DELETE FROM NHACC WHERE MANCC = '" + txtmancc.Text.Trim() + "'";
+                sql = @"EXEC XOA_NHACC '" + txtmancc.Text.Trim() + "'";
                 cmd = new SqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 conn.Close();
@@ -104,7 +112,8 @@ namespace DEAN_SQL
             try
             {
                 conn.Open();
-                string sql = @"UPDATE NHACC SET MANCC = @MANCC, TENNCC = @TENNCC, DIACHI = @DIACHI, SODT = @SODT WHERE MANCC = '" + item.SubItems[0].Text + "'";
+                //string sql = @"UPDATE NHACC SET MANCC = @MANCC, TENNCC = @TENNCC, DIACHI = @DIACHI, SODT = @SODT WHERE MANCC = '" + item.SubItems[0].Text + "'";
+                string sql = @"EXEC SUA_NHACC '" + txtmancc.Text.Trim() + "', N'" + txttenncc.Text.Trim() + "', N'" + txtdiachi.Text.Trim() + "', '" + txtsodt.Text.Trim() + "','" + item.SubItems[0].Text + "'";
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@MANCC", txtmancc.Text.Trim());

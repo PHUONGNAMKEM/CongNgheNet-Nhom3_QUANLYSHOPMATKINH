@@ -158,7 +158,10 @@ namespace DEAN_SQL
                                 connection.Open();
 
                                 // Lấy dữ liệu từ bảng được chọn
-                                using (SqlDataAdapter adapter = new SqlDataAdapter($"SELECT * FROM {selectedTable}", connection))
+                                //using (SqlDataAdapter adapter = new SqlDataAdapter($"SELECT * FROM {selectedTable}", connection))
+                                
+                                // SỬ DỤNG THỦ TỤC Ở ĐÂY!!!
+                                using (SqlDataAdapter adapter = new SqlDataAdapter("EXEC EXPORT_FROM_ANY_TABLE '"+selectedTable+"'", connection))
                                 {
                                     DataTable tableData = new DataTable();
                                     adapter.Fill(tableData);
@@ -231,7 +234,8 @@ namespace DEAN_SQL
                                     string tableName = row["TABLE_NAME"].ToString();
 
                                     // Lấy dữ liệu từ từng bảng
-                                    using (SqlDataAdapter adapter = new SqlDataAdapter($"SELECT * FROM {tableName}", connection))
+                                    //using (SqlDataAdapter adapter = new SqlDataAdapter($"SELECT * FROM {tableName}", connection))
+                                    using (SqlDataAdapter adapter = new SqlDataAdapter("EXEC EXPORT_FROM_ANY_TABLE '" + tableName + "'", connection))
                                     {
                                         DataTable tableData = new DataTable();
                                         adapter.Fill(tableData);
@@ -293,21 +297,58 @@ namespace DEAN_SQL
                     if (!string.IsNullOrWhiteSpace(txtNewTableName.Text))
                     {
                         // Tạo bảng mới trong SQL Server
-                        using (SqlCommand cmd = new SqlCommand($"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '{tableName}') BEGIN CREATE TABLE {tableName} (", con))
+                        //using (SqlCommand cmd = new SqlCommand($"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '{tableName}') BEGIN CREATE TABLE {tableName} (", con))
+                        //{
+                        //    foreach (DataColumn column in dt.Columns)
+                        //    {
+                        //        string sqlDataType = "NVARCHAR(MAX)"; // mặc định là NVARCHAR(MAX)
+                        //        if (column.DataType == typeof(int))
+                        //            sqlDataType = "INT";
+                        //        else if (column.DataType == typeof(DateTime))
+                        //            sqlDataType = "DATETIME";
+
+                        //        cmd.CommandText += $"{column.ColumnName} {sqlDataType},";
+                        //    }
+                        //    cmd.CommandText = cmd.CommandText.TrimEnd(',') + "); END";
+                        //    cmd.ExecuteNonQuery();
+                        //}
+                        using (SqlConnection con = new SqlConnection(constr))
                         {
+                            con.Open();
+
+                            // Tạo chuỗi chứa các cột và kiểu dữ liệu từ DataTable
+                            string columnDefinitions = "";
                             foreach (DataColumn column in dt.Columns)
                             {
-                                string sqlDataType = "NVARCHAR(MAX)"; // mặc định là NVARCHAR(MAX)
+                                string sqlDataType = "NVARCHAR(MAX)"; // Mặc định là NVARCHAR(MAX)
                                 if (column.DataType == typeof(int))
                                     sqlDataType = "INT";
                                 else if (column.DataType == typeof(DateTime))
                                     sqlDataType = "DATETIME";
 
-                                cmd.CommandText += $"{column.ColumnName} {sqlDataType},";
+                                // Thêm tên cột và kiểu dữ liệu vào chuỗi
+                                columnDefinitions += $"{column.ColumnName} {sqlDataType},";
                             }
-                            cmd.CommandText = cmd.CommandText.TrimEnd(',') + "); END";
-                            cmd.ExecuteNonQuery();
+
+                            // Bỏ dấu phẩy cuối cùng
+                            columnDefinitions = columnDefinitions.TrimEnd(',');
+
+                            // Sử dụng thủ tục để tạo bảng
+                            using (SqlCommand cmd = new SqlCommand("IMPORT_NEW_TABLE_CHECK_EXIST", con))
+                            {
+                                cmd.CommandType = CommandType.StoredProcedure;
+
+                                // Thêm tham số tên bảng
+                                cmd.Parameters.AddWithValue("@TABLE_NAME", tableName);
+
+                                // Thêm tham số chứa định nghĩa cột
+                                cmd.Parameters.AddWithValue("@COLUMNS_DEFINITION", columnDefinitions);
+
+                                // Thực thi thủ tục
+                                cmd.ExecuteNonQuery();
+                            }
                         }
+
                     }
 
                     // Dùng SqlBulkCopy để nhập dữ liệu

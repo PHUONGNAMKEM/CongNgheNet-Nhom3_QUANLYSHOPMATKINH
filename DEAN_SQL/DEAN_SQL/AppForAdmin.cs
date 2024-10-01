@@ -18,6 +18,7 @@ namespace DEAN_SQL
 
         private Timer timer_logout;
         public string connString, user, pass, sever, data;
+        public SqlConnection conn;
         public AppForAdmin(string phanQuyen, string name, string password, string servername, string database)
         {
             InitializeComponent();
@@ -73,24 +74,18 @@ namespace DEAN_SQL
         {
             try
             {
-                // Đảm bảo kết nối mở trước khi thực hiện lệnh
-                if (DatabaseConnection.con.State == ConnectionState.Closed)
-                {
-                    DatabaseConnection.con.Open();
-                }
-
-                string query = "SELECT * FROM UserSessions WHERE UserID = @UserID";
-                using (SqlDataAdapter sda = new SqlDataAdapter(query, DatabaseConnection.con))
+                conn = new SqlConnection(connString);
+                conn.Open();
+                //string query = "SELECT * FROM UserSessions WITH (NOLOCK) WHERE UserID = @UserID";
+                string query = "SELECT * FROM dbo.GET_USER_ID('" + user + "')"; //SỬ DỤNG HÀM Ở ĐÂY!
+                using (SqlDataAdapter sda = new SqlDataAdapter(query, conn))
                 {
                     sda.SelectCommand.Parameters.AddWithValue("@UserID", user);
                     DataTable dTable = new DataTable();
                     sda.Fill(dTable);
-
                     if (dTable.Rows.Count == 0)
                     {
                         timer_logout.Stop();
-                        //MessageBox.Show("Người dùng " + DangNhap.dangNhap + " đã đăng xuất", "Thông báo");
-
                         // Hiển thị form đăng nhập và đóng form chính
                         Form1 login = new Form1();
                         login.Location = this.Location; // Đặt form login ở vị trí của form hiện tại
@@ -125,7 +120,7 @@ namespace DEAN_SQL
 
         private void btnchitiethoadon_Click(object sender, EventArgs e)
         {
-            CHITIETHOADON ct = new CHITIETHOADON();
+            CHITIETHOADON ct = new CHITIETHOADON(user, pass, sever, data);
             ct.Show();
         }
 
@@ -137,25 +132,25 @@ namespace DEAN_SQL
 
         private void btnloaihang_Click(object sender, EventArgs e)
         {
-            LoaiHang lh = new LoaiHang();
+            LoaiHang lh = new LoaiHang(user, pass, sever, data);
             lh.Show();
         }
 
         private void btnchitietpn_Click(object sender, EventArgs e)
         {
-            CHITIETPN ctpn = new CHITIETPN();
+            CHITIETPN ctpn = new CHITIETPN( user, pass, sever, data);
             ctpn.Show();
         }
 
         private void btnphieunhap_Click(object sender, EventArgs e)
         {
-            PHIEUNHAP pn = new PHIEUNHAP();
+            PHIEUNHAP pn = new PHIEUNHAP(user, pass, sever, data);
             pn.Show();
         }
 
         private void btnnhacc_Click(object sender, EventArgs e)
         {
-            NHACC ncc = new NHACC();
+            NHACC ncc = new NHACC(user, pass, sever, data);
             ncc.Show();
         }
 
@@ -172,30 +167,64 @@ namespace DEAN_SQL
 
         private void button1_Click(object sender, EventArgs e)
         {
-            ThongTinNhanVien ttnv = new ThongTinNhanVien();
+            ThongTinNhanVien ttnv = new ThongTinNhanVien(user, pass, sever, data);
             ttnv.Show();
         }
 
+        //private void btnlogout_Click(object sender, EventArgs e)
+        //{
+        //    //this.Hide();
+        //    //Form1 frm1 = new Form1();
+        //    //frm1.Show();
+
+        //    DatabaseConnection.InitializeConnection(connString);
+        //    try
+        //    {
+        //        // Đăng xuất và đóng tất cả các form khác
+        //        timer_logout.Stop();
+
+        //        // Đảm bảo kết nối mở trước khi thực hiện lệnh
+        //        if (DatabaseConnection.con.State == ConnectionState.Closed)
+        //        {
+        //            DatabaseConnection.con.Open();
+        //        }
+
+        //        //string query = "DELETE FROM UserSessions WHERE UserID = @UserID";
+        //        string query = "EXEC DELETE_ALL_USERNAME_IN_USERSESSIONS '"+user+"'";
+
+        //        using (SqlCommand cmd = new SqlCommand(query, DatabaseConnection.con))
+        //        {
+        //            cmd.Parameters.AddWithValue("@UserID", user);
+        //            cmd.ExecuteNonQuery();
+        //        }
+        //        //MessageBox.Show("Người dùng " + DangNhap.dangNhap + " đã đăng xuất", "Thông báo");
+
+        //        // Hiển thị form đăng nhập và đóng form hiện tại
+        //        Form1 login = new Form1();
+        //        login.Location = this.Location; // Đặt form login ở vị trí của form hiện tại
+        //        login.Show();
+        //        this.Close();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show("Error-------> " + ex.Message);
+        //    }
+        //}
         private void btnlogout_Click(object sender, EventArgs e)
         {
-            //this.Hide();
-            //Form1 frm1 = new Form1();
-            //frm1.Show();
 
-            DatabaseConnection.InitializeConnection(connString);
+            //DatabaseConnection.InitializeConnection(connString);
             try
             {
                 // Đăng xuất và đóng tất cả các form khác
                 timer_logout.Stop();
-
                 // Đảm bảo kết nối mở trước khi thực hiện lệnh
-                if (DatabaseConnection.con.State == ConnectionState.Closed)
-                {
-                    DatabaseConnection.con.Open();
-                }
+                conn = new SqlConnection(connString);
+                conn.Open();
 
-                string query = "DELETE FROM UserSessions WHERE UserID = @UserID";
-                using (SqlCommand cmd = new SqlCommand(query, DatabaseConnection.con))
+                //string query = "DELETE FROM UserSessions WHERE UserID = @UserID";
+                string query = "EXEC DELETE_ALL_USERNAME_IN_USERSESSIONS '"+user+"'";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@UserID", user);
                     cmd.ExecuteNonQuery();
@@ -214,6 +243,5 @@ namespace DEAN_SQL
             }
         }
 
-      
     }
 }

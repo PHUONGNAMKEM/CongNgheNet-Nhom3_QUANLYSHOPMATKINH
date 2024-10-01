@@ -13,11 +13,16 @@ namespace DEAN_SQL
 {
     public partial class CHITIETHOADON : Form
     {
-        public CHITIETHOADON()
+        public string user, pass, server, data, connectionString;
+        public CHITIETHOADON(string username, string password, string servername, string database)
         {
             InitializeComponent();
+            user = username;
+            pass = password;
+            server = servername;
+            data = database;
+            connectionString = "Server=" + server + ";Database=" + data + ";User Id=" + user + ";Password=" + pass + ";";
         }
-        string connectionString = "Server=" + "localhost" + "\\SQLEXPRESS" + ";Database=" + "DEAN4" + ";User Id=" + DangNhap.name + ";Password=" + DangNhap.password + ";";
         SqlConnection conn;
         SqlCommand cmd;
         SqlDataReader read;
@@ -33,7 +38,8 @@ namespace DEAN_SQL
             i = 0;
             lst_dl.Items.Clear();
             conn.Open();
-            sql = @"SELECT * FROM CHITIETHOADON";
+            //sql = @"SELECT * FROM CHITIETHOADON";
+            sql = @"EXEC HIENTHI_CHITIETHOADON";
             cmd = new SqlCommand(sql, conn);
             read = cmd.ExecuteReader();
             while (read.Read())
@@ -62,7 +68,8 @@ namespace DEAN_SQL
                 try
                 {
                     conn.Open();
-                    sql = @"INSERT INTO CHITIETHOADON(MAHD, MAHG, SOLUONG, GIABAN) VALUES('" + txtmahd.Text.Trim() + "','" + txtmahg.Text.Trim() + "',N'" + txtsoluong.Text.Trim() + "','" + txtgiaban.Text.Trim() + "')";
+                    //sql = @"INSERT INTO CHITIETHOADON(MAHD, MAHG, SOLUONG, GIABAN) VALUES('" + txtmahd.Text.Trim() + "','" + txtmahg.Text.Trim() + "',N'" + txtsoluong.Text.Trim() + "','" + txtgiaban.Text.Trim() + "')";
+                    sql = @"EXEC THEM_CHITIETHOADON '" + txtmahd.Text.Trim() + "', '" + txtmahg.Text.Trim() + "', " + txtsoluong.Text.Trim() + ", " + txtgiaban.Text.Trim() + "";
                     cmd = new SqlCommand(sql, conn);
                     cmd.ExecuteNonQuery();
                     conn.Close();
@@ -85,7 +92,8 @@ namespace DEAN_SQL
             try
             {
                 conn.Open();
-                sql = @"DELETE FROM CHITIETHOADON WHERE MAHD = '" + txtmahd.Text.Trim() + "' AND MAHG = '"+txtmahg.Text.Trim()+"'";
+                //sql = @"DELETE FROM CHITIETHOADON WHERE MAHD = '" + txtmahd.Text.Trim() + "' AND MAHG = '"+txtmahg.Text.Trim()+"'";
+                sql = @"EXEC XOA_CHITIETHOADON '" + txtmahd.Text.Trim() + "', '" + txtmahg.Text.Trim() + "'";
                 cmd = new SqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 conn.Close();
@@ -104,7 +112,8 @@ namespace DEAN_SQL
             try
             {
                 conn.Open();
-                string sql = @"UPDATE CHITIETHOADON SET MAHD = @MAHD, MAHG = @MAHG, SOLUONG = @SOLUONG, GIABAN = @GIABAN WHERE MAHD = @MAHD AND MAHG = '" + item.SubItems[0].Text+ "'";
+                //string sql = @"UPDATE CHITIETHOADON SET MAHD = @MAHD, MAHG = @MAHG, SOLUONG = @SOLUONG, GIABAN = @GIABAN WHERE MAHD = @MAHD AND MAHG = '" + item.SubItems[0].Text+ "'";
+                string sql = @"EXEC SUA_CHITIETHOADON '" + txtmahd.Text.Trim() + "', '" + txtmahg.Text.Trim() + "'," + txtsoluong.Text.Trim() + "," + txtgiaban.Text.Trim() + ", '" + item.SubItems[0].Text.Trim() + "', '" + item.SubItems[1].Text.Trim() + "'";
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@MAHD", txtmahd.Text.Trim());

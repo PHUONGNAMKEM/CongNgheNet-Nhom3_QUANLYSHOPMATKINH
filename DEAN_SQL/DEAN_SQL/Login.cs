@@ -50,12 +50,13 @@ namespace DEAN_SQL
                 DatabaseConnection.InitializeConnection(connString);
                 //using (Conn = new SqlConnection(connString))
 
-                using (Conn = DatabaseConnection.con)
+                using (Conn = new SqlConnection(connString))
                 {
                     Conn.Open();
                     DangNhap.name = txtusername.Text;
                     DangNhap.password = txtpassword.Text;
-                    string insertSessionQuery = "INSERT INTO UserSessions (UserID) VALUES (@UserID)";
+                    //string insertSessionQuery = "INSERT INTO UserSessions (UserID) VALUES (@UserID)";
+                    string insertSessionQuery = "EXEC UserSessions_insert '" + User + "'";
                     using (SqlCommand insertCmd = new SqlCommand(insertSessionQuery, Conn))
                     {
                         insertCmd.Parameters.AddWithValue("@UserID", User);
